@@ -13,7 +13,7 @@ CHANNEL_2_CHAT_ID = "@HataMasona"
 CHANNEL_3_USERNAME = "@HolidollaModz"
 CHANNEL_3_CHAT_ID = "@HolidollaModz"
 SUPPORT_USERNAME = "@Manu_Maso"
-APK_URL = "https://t.me/manko1112"
+APK_URL = "https://t.me/mammamaa12"
 
 # Название файла
 FILE_NAME = "Mansory Holidolla V1.9"
@@ -343,4 +343,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
