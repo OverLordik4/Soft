@@ -2,9 +2,10 @@ import logging
 from telegram import Update, ChatJoinRequest
 from telegram.ext import Application, ChatJoinRequestHandler, ContextTypes, CommandHandler
 
-# Настройки бота для автопринятия заявок
-AUTO_APPROVE_BOT_TOKEN = "8005876576:AAE3MWQ3hlollD5Tl9a1DDibrS7e7UVhl48"  # Замените на токен второго бота
-CHANNEL_CHAT_ID = "-1003204433403"  # ID канала, где принимать заявки
+# Настройки бота
+BOT_TOKEN = "8005876576:AAE3MWQ3hlollD5Tl9a1DDibrS7e7UVhl48"  # Замените на токен бота
+CHANNEL_CHAT_ID = "-1003204433403"  # ID вашего канала
+OWNER_ID = 8249128340  # Замените на ваш ID в Telegram
 
 # Настройка логирования
 logging.basicConfig(
@@ -13,16 +14,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Статистика для бота автопринятия
-auto_approve_stats = {
-    "total_approved": 0,
-    "errors": 0,
-    "last_approval": None
-}
-
-
 async def approve_join_request(update: ChatJoinRequest, context: ContextTypes.DEFAULT_TYPE):
-    """Автоматически принимает заявки на вступление в канал"""
+    """Автоматически принимает заявки и уведомляет владельца"""
     user = update.from_user
     chat = update.chat
     
@@ -30,88 +23,53 @@ async def approve_join_request(update: ChatJoinRequest, context: ContextTypes.DE
         # Одобряем заявку
         await update.approve()
         
-        # Обновляем статистику
-        auto_approve_stats["total_approved"] += 1
-        auto_approve_stats["last_approval"] = update.date.strftime("%Y-%m-%d %H:%M:%S")
-        
-        logger.info(f"✅ Заявка одобрена: {user.first_name} (ID: {user.id}) в канал: {chat.title}")
-        
-        # Отправляем приветственное сообщение (опционально)
-        try:
-            welcome_text = f"""
-👋 Добро пожаловать в {chat.title}, {user.first_name}!
+        # Уведомляем владельца
+        owner_message = f"""
+✅ Новая заявка одобрена:
 
-✅ Ваша заявка была автоматически одобрена.
-
-📢 Теперь вы можете получить доступ к эксклюзивному контенту!
-            """
-            await context.bot.send_message(
-                chat_id=user.id,
-                text=welcome_text
-            )
-        except Exception as e:
-            logger.warning(f"Не удалось отправить приветственное сообщение пользователю {user.id}: {e}")
-            
+👤 Пользователь: {user.first_name} {f'({user.username})' if user.username else ''}
+🆔 ID: {user.id}
+📢 Канал: {chat.title}
+⏰ Время: {update.date.strftime('%Y-%m-%d %H:%M:%S')}
+        """
+        
+        await context.bot.send_message(
+            chat_id=OWNER_ID,
+            text=owner_message
+        )
+        
+        logger.info(f"✅ Заявка одобрена: {user.first_name} (ID: {user.id})")
+        
     except Exception as e:
-        auto_approve_stats["errors"] += 1
-        logger.error(f"❌ Ошибка при одобрении заявки пользователя {user.id}: {e}")
+        logger.error(f"❌ Ошибка: {e}")
+        
+        # Уведомляем владельца об ошибке
+        try:
+            await context.bot.send_message(
+                chat_id=OWNER_ID,
+                text=f"❌ Ошибка при одобрении заявки от {user.first_name}: {e}"
+            )
+        except:
+            pass
 
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для проверки бота (только для владельца)"""
+    if update.effective_user.id == OWNER_ID:
+        await update.message.reply_text("🤖 Бот для автопринятия заявок работает!")
+    else:
+        await update.message.reply_text("⛔ У вас нет доступа к этому боту.")
 
-async def auto_approve_stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для просмотра статистики бота автопринятия"""
-    stats_text = f"""
-📊 <b>Статистика бота автопринятия</b>
-
-✅ <b>Всего одобрено заявок:</b> {auto_approve_stats['total_approved']}
-❌ <b>Ошибок:</b> {auto_approve_stats['errors']}
-🕒 <b>Последняя заявка:</b> {auto_approve_stats['last_approval'] or 'Еще нет'}
-
-📢 <b>Канал:</b> {CHANNEL_CHAT_ID}
-🤖 <b>Статус:</b> Активен
-    """
-    await update.message.reply_text(stats_text, parse_mode='HTML')
-
-
-async def start_auto_approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда старт для бота автопринятия"""
-    await update.message.reply_text(
-        "🤖 <b>Бот для автоматического принятия заявок</b>\n\n"
-        "✅ <b>Функции:</b>\n"
-        "• Автоматическое одобрение заявок в канал\n"
-        "• Приветственные сообщения\n"
-        "• Статистика работы\n\n"
-        f"📢 <b>Канал:</b> {CHANNEL_CHAT_ID}\n"
-        "⚡ <b>Статус:</b> Активен\n\n"
-        "📊 Используйте /stats для просмотра статистики",
-        parse_mode='HTML'
-    )
-
-
-def setup_auto_approve_bot():
-    """Настройка и запуск бота для автопринятия заявок"""
-    application = Application.builder().token(AUTO_APPROVE_BOT_TOKEN).build()
+def main():
+    application = Application.builder().token(BOT_TOKEN).build()
     
-    # Добавляем обработчик заявок на вступление
+    # Обработчик заявок
     application.add_handler(ChatJoinRequestHandler(approve_join_request))
     
-    # Добавляем команды для управления
-    application.add_handler(CommandHandler("start", start_auto_approve))
-    application.add_handler(CommandHandler("stats", auto_approve_stats_command))
+    # Команды
+    application.add_handler(CommandHandler("start", start))
     
-    return application
-
-
-def main_auto_approve():
-    """Запуск бота автопринятия"""
-    application = setup_auto_approve_bot()
-    
-    print("🤖 Бот автопринятия заявок запущен!")
-    print("📢 Режим: Автоматическое принятие заявок")
-    print(f"🎯 Канал: {CHANNEL_CHAT_ID}")
-    print("✅ Бот готов принимать заявки...")
-    
+    print("🤖 Бот для автопринятия заявок запущен!")
     application.run_polling()
 
-
 if __name__ == "__main__":
-    main_auto_approve()
+    main()
