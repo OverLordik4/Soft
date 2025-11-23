@@ -3,7 +3,7 @@ from telegram import Update, ChatJoinRequest
 from telegram.ext import Application, ChatJoinRequestHandler, ContextTypes, CommandHandler
 
 # Настройки бота
-BOT_TOKEN = "8005876576:AAE3MWQ3hlollD5Tl9a1DDibrS7e7UVhl48"  # Замените на токен бота
+BOT_TOKEN = "8416995957:AAG2Qn_Gzqy35C6SAv2wwGCecVKaXoz6cqA"  # Замените на токен бота
 CHANNEL_CHAT_ID = "-1003204433403"  # ID вашего канала
 OWNER_ID = 8249128340  # Замените на ваш ID в Telegram
 
