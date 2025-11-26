@@ -1,12 +1,12 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 from telegram.ext import MessageHandler, filters
 
 # Настройки бота
-BOT_TOKEN = "8356262671:AAHie8HJ7NcqxiurF3ZKUJF1AcbZCdbbI2U"
+BOT_TOKEN = "8356262671:AAHie8HJ7NcqxiurF3ZKUJF1AcbZCdbbI2U"  # Верный токен
 CHANNEL_INVITE_LINK = "https://t.me/+cF3j8j5m4jBkMGEy"
-CHANNEL_CHAT_ID = "-1003204433403"  # ID канала для проверки подписки (замени на актуальный)
+CHANNEL_CHAT_ID = "-1003204433403"
 CHANNEL_2_USERNAME = "@HataMasona"
 CHANNEL_2_CHAT_ID = "-1002510814806"
 CHANNEL_3_USERNAME = "@HolidollaModz"
@@ -16,13 +16,6 @@ APK_URL = "https://t.me/mammq123"
 
 # Название файла
 FILE_NAME = "Mansory Holidolla V2.0"
-
-# Простая статистика в памяти
-bot_stats = {
-    "total_users": 0,
-    "total_downloads": 0,
-    "users": set()
-}
 
 # Настройка логирования
 logging.basicConfig(
@@ -47,7 +40,6 @@ async def check_subscriptions(user_id: int, context: ContextTypes.DEFAULT_TYPE) 
     """Проверяет подписку на все каналы"""
     subscriptions = {}
 
-    # Все три канала теперь проверяются
     channels = [
         ("Основной канал", CHANNEL_CHAT_ID),
         (CHANNEL_2_USERNAME, CHANNEL_2_CHAT_ID),
@@ -68,10 +60,6 @@ async def check_subscriptions(user_id: int, context: ContextTypes.DEFAULT_TYPE) 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /start"""
     user = update.effective_user
-
-    # Добавляем пользователя в статистику
-    bot_stats["total_users"] += 1
-    bot_stats["users"].add(user.id)
 
     welcome_text = f"""
 👋 <b>Добро пожаловать, {user.first_name}!</b>
@@ -98,7 +86,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик текстовых сообщений"""
-    # Просто отправляем меню на любое текстовое сообщение
     await update.message.reply_text(
         "👇 <b>Выберите действие из меню:</b>",
         reply_markup=get_main_keyboard(),
@@ -114,15 +101,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     if query.data == "get_apk":
-        await query.edit_message_text("🔄 <b>Проверяем подписки...</b>", reply_markup=None, parse_mode='HTML')
+        await query.edit_message_text("🔄 <b>Проверяем подписки...</b>", parse_mode='HTML')
 
         subscriptions = await check_subscriptions(user_id, context)
         all_subscribed = all(subscriptions.values())
 
         if all_subscribed:
             keyboard = [
-                [InlineKeyboardButton(f"📥 Скачать {FILE_NAME}", callback_data="download_apk")],
-                [InlineKeyboardButton(f"💬 Поддержка", url=f"https://t.me/{SUPPORT_USERNAME[1:]}")],
+                [InlineKeyboardButton(f"📥 Скачать {FILE_NAME}", url=APK_URL)],
                 [InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -143,8 +129,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton("📢 Основной канал", url=CHANNEL_INVITE_LINK)],
                 [InlineKeyboardButton(f"📢 {CHANNEL_2_USERNAME}", url=f"https://t.me/{CHANNEL_2_USERNAME[1:]}")],
                 [InlineKeyboardButton(f"📢 {CHANNEL_3_USERNAME}", url=f"https://t.me/{CHANNEL_3_USERNAME[1:]}")],
-                [InlineKeyboardButton(f"🔄 Проверить подписки", callback_data="get_apk")],
-                [InlineKeyboardButton(f"💬 Поддержка", url=f"https://t.me/{SUPPORT_USERNAME[1:]}")],
+                [InlineKeyboardButton("🔄 Проверить подписки", callback_data="get_apk")],
                 [InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -194,10 +179,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         help_text = f"""
 ℹ️ <b>Центр помощи</b>
 
-⚙️ <b>Основные команды:</b>
-/start - начать работу
-/menu - показать меню
-
 📦 <b>Доступная версия:</b>
 🚀 {FILE_NAME}
 
@@ -217,7 +198,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         keyboard = [
             [InlineKeyboardButton("🎁 Получить APK", callback_data="get_apk")],
-            [InlineKeyboardButton("💬 Поддержка", callback_data="support_info")],
             [InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -245,31 +225,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• Подписку на все каналы\n"
             "• Стабильность интернет-соединения\n"
             "• Достаточно места на устройстве",
-            reply_markup=reply_markup,
-            parse_mode='HTML'
-        )
-
-    elif query.data == "download_apk":
-        # Добавляем скачивание в статистику
-        bot_stats["total_downloads"] += 1
-
-        keyboard = [
-            [InlineKeyboardButton(f"📥 Скачать файл", url=APK_URL)],
-            [InlineKeyboardButton("🔄 Проверить снова", callback_data="get_apk")],
-            [InlineKeyboardButton(f"💬 Поддержка", url=f"https://t.me/{SUPPORT_USERNAME[1:]}")],
-            [InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await query.edit_message_text(
-            f"🚀 <b>{FILE_NAME}</b>\n\n"
-            f"🔗 <b>Ссылка для скачивания:</b>\n{APK_URL}\n\n"
-            f"📥 <b>Инструкция по установке:</b>\n"
-            "1. Нажмите кнопку 'Скачать файл'\n"
-            "2. В открывшемся Telegram нажмите на файл\n"
-            "3. Выберите 'Скачать' или 'Download'\n"
-            "4. После скачивания установите APK\n"
-            "5. Разрешите установку из неизвестных источников",
             reply_markup=reply_markup,
             parse_mode='HTML'
         )
@@ -317,4 +272,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
