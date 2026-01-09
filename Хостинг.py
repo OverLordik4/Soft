@@ -10,7 +10,7 @@ import shutil
 import html
 
 # Настройки
-BOT_TOKEN = ""
+BOT_TOKEN = "8259942344:AAFx3ZXfHfCaeg5nC9V0wQeFeE59Mc-_g-c"
 LOG_CHAT_ID = -1003235777348  # Ваш чат для логов
 
 
@@ -910,5 +910,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
